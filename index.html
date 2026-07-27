@@ -128,7 +128,7 @@
     width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     position:absolute; top:-18px; left:50%; transform:translateX(-50%); box-shadow:0 4px 8px rgba(0,0,0,0.1);
   }
-  .podium .cname{font-family:'Fredoka',sans-serif; font-weight:600; font-size:1.2rem; color:var(--leaf-dark); line-height:1.2; margin-top:24px; word-break:break-word;}
+  .podium .cname{font-family:'Fredoka',sans-serif; font-weight:600; font-size:1.2rem; color:var(--leaf-dark); line-height:1.2; margin-top:24px; word-break:break-word; text-transform: uppercase;}
   .podium .count{font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:2rem; color:var(--gold); margin-top:4px;}
   .podium .clabel{font-size:0.75rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; margin-top:-2px;}
   .podium .trophy{font-size:3rem; position:absolute; top:-60px; left:50%; transform:translateX(-50%);}
@@ -138,7 +138,7 @@
     color:var(--leaf-dark); margin:0 0 20px; text-align:center;
   }
 
-  /* Listado de cursos detallado */
+  /* Listado de salones detallado */
   .rank-card{
     background: var(--card-bg); border-radius: var(--radius-lg); padding: 28px;
     box-shadow: var(--shadow-card); border: 1px solid var(--border); margin-bottom: 40px;
@@ -153,7 +153,7 @@
   .rank-list li:last-child{border-bottom:none;}
   .rank-info{ display: flex; align-items: center; gap: 16px; flex: 1; }
   .rank-list .pos{font-family:'IBM Plex Mono', monospace; color:var(--ink-soft); width:30px; font-weight:600; font-size: 1.1rem;}
-  .rank-list .cname2{font-weight:600; color:var(--ink); font-size: 1.05rem; font-family:'Fredoka', sans-serif;}
+  .rank-list .cname2{font-weight:600; color:var(--ink); font-size: 1.05rem; font-family:'Fredoka', sans-serif; text-transform: uppercase;}
   .rank-metrics{ display: flex; gap: 24px; align-items: center; text-align: right; }
   .metric-group{ display: flex; flex-direction: column; }
   .metric-label{ font-size: 0.75rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -203,16 +203,16 @@
 
 <script>
 /* ============================================================
-   CONFIGURACIÓN Y DATOS
+   CONFIGURACIÓN Y DATOS DE CATEGORÍAS Y SALONES
    ============================================================ */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQCtQYDSC-GE_OWiqUlPeDNTx3oMAN1p7VXVJHIoJfdetoyvb6OQ3ysZAYygKKSd7hcCF_GXiNN1SKM/pub?output=csv";
 
 const CATEGORIES = [
-  { id:1, color:"var(--cat1)", name:"Seedlings", emoji:"🌱", grades:"Prejardín, Jardín, Transición y 1°", match:["prejardin","jardin","transicion","primero","1°","1"] },
-  { id:2, color:"var(--cat2)", name:"Scouts", emoji:"🌿", grades:"2°, 3°, 4° y 5°", match:["segundo","tercero","cuarto","quinto","2°","3°","4°","5°","2","3","4","5"] },
-  { id:3, color:"var(--cat3)", name:"Saplings", emoji:"🌳", grades:"6°, 7°, 8°", match:["sexto","septimo","séptimo","octavo","6°","7°","8°","6","7","8"] },
-  { id:4, color:"var(--cat4)", name:"Green Guardians", emoji:"🌲", grades:"9°, 10°, 11°", match:["noveno","decimo","décimo","once","9°","10°","11°","9","10","11"] },
-  { id:5, color:"var(--cat5)", name:"Eco Leaders", emoji:"🌎", grades:"Introductorio, 12°, 13°", match:["introductorio","12°","13°","12-1","12-2","13-1","13-2","12","13"] },
+  { id:1, color:"var(--cat1)", name:"Seedlings", emoji:"🌱", grades:"Prejardín, Jardín, Transición y 1°", match:["prejardin","jardin","transicion","primero","1°","1"], validGrades:["prejardin","jardin","transicion","primero","1"] },
+  { id:2, color:"var(--cat2)", name:"Scouts", emoji:"🌿", grades:"2°, 3°, 4° y 5°", match:["segundo","tercero","cuarto","quinto","2°","3°","4°","5°","2","3","4","5"], validGrades:["segundo","tercero","cuarto","quinto","2","3","4","5"] },
+  { id:3, color:"var(--cat3)", name:"Saplings", emoji:"🌳", grades:"6°, 7°, 8°", match:["sexto","septimo","séptimo","octavo","6°","7°","8°","6","7","8"], validGrades:["sexto","septimo","séptimo","octavo","6","7","8"] },
+  { id:4, color:"var(--cat4)", name:"Green Guardians", emoji:"🌲", grades:"9°, 10°, 11°", match:["noveno","decimo","décimo","once","9°","10°","11°","9","10","11"], validGrades:["noveno","decimo","décimo","once","9","10","11"] },
+  { id:5, color:"var(--cat5)", name:"Eco Leaders", emoji:"🌎", grades:"Introductorio, 12°, 13°", match:["introductorio","12°","13°","12-1","12-2","13-1","13-2","12","13"], validGrades:["introductorio","12","13"] },
 ];
 
 const norm = s => (s||"").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
@@ -229,11 +229,17 @@ function categoryFor(course){
   return null;
 }
 
-function driveImgSrc(url){
+function getDirectDriveImg(url){
   if(!url) return null;
-  const m = url.match(/[-\w]{25,}/);
-  if(!m) return url;
-  return `https://drive.google.com/thumbnail?id=${m[0]}&sz=w400`;
+  const str = url.toString().trim();
+  // Si ya es un enlace directo de visualización o miniatura
+  const m = str.match(/[-\w]{25,}/);
+  if(!m) return str;
+  // Soporte para links de Google Drive compartidos
+  if(str.includes("drive.google.com") || str.includes("docs.google.com")){
+    return `https://drive.google.com/uc?export=view&id=${m[0]}`;
+  }
+  return str;
 }
 
 let RAW = [];
@@ -250,17 +256,17 @@ async function loadData(){
     const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
     const headers = parsed.meta.fields || [];
 
-    const colCurso   = findCol(headers, ["curso","grado"]);
+    const colCurso   = findCol(headers, ["curso","grado","salon","salón"]);
     const colPeriodo = findCol(headers, ["periodo","período"]);
     const colSemana  = findCol(headers, ["semana"]);
     const colCant    = findCol(headers, ["cantidad","botellas","numero","número"]);
-    const colNombre  = findCol(headers, ["nombre"]);
-    const colFoto    = findCol(headers, ["foto","evidencia","imagen"]);
+    const colNombre  = findCol(headers, ["nombre","responsable","estudiante"]);
+    const colFoto    = findCol(headers, ["foto","evidencia","imagen","archivo"]);
     const colTime    = headers[0];
 
     RAW = parsed.data.map(row => ({
       nombre: colNombre ? row[colNombre] : "",
-      curso: colCurso ? row[colCurso] : "",
+      curso: colCurso ? row[colCurso].toString().trim() : "",
       periodo: colPeriodo ? row[colPeriodo] : "General",
       semana: colSemana ? row[colSemana] : "",
       cantidad: colCant ? parseInt((row[colCant]||"0").toString().replace(/[^\d]/g,""))||0 : 0,
@@ -294,7 +300,7 @@ function renderHome(container){
     const totals = {};
     rows.forEach(r => { totals[r.curso] = (totals[r.curso]||0) + r.cantidad; });
     const ranking = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
-    const leader = ranking.length > 0 ? `${ranking[0][0]} (${ranking[0][1]} 🧴)` : "Sin registros";
+    const leader = ranking.length > 0 ? `${ranking[0][0].toUpperCase()} (${ranking[0][1]} 🧴)` : "Sin registros";
 
     return `
       <div class="cat-card" style="border-top: 5px solid ${cat.color};" onclick="openCategory(${cat.id})">
@@ -302,7 +308,7 @@ function renderHome(container){
         <h3>${cat.name}</h3>
         <p>${cat.grades}</p>
         <div class="leader-prev">
-          <span>Líder actual:</span>
+          <span>Líder salón:</span>
           <b>${leader} 🏆</b>
         </div>
       </div>
@@ -311,7 +317,7 @@ function renderHome(container){
 
   container.innerHTML = `
     <h2 class="section-title" style="margin-bottom: 8px;">Selecciona una Categoría</h2>
-    <p style="text-align:center; color:var(--ink-soft); margin-bottom: 32px;">Explora el progreso ambiental de cada grupo escolar</p>
+    <p style="text-align:center; color:var(--ink-soft); margin-bottom: 32px;">Explora el podio y los salones de cada categoría escolar</p>
     <div class="cat-grid">${cardsHtml}</div>
   `;
 }
@@ -324,10 +330,11 @@ function renderCategoryDetail(container, catId){
   const weeklyTotals = {};
   
   rows.forEach(r => {
-    totals[r.curso] = (totals[r.curso]||0) + r.cantidad;
+    const salonName = r.curso;
+    totals[salonName] = (totals[salonName]||0) + r.cantidad;
     const semKey = r.semana ? r.semana.trim() : "Actual";
-    if(!weeklyTotals[r.curso]) weeklyTotals[r.curso] = {};
-    weeklyTotals[r.curso][semKey] = (weeklyTotals[r.curso][semKey]||0) + r.cantidad;
+    if(!weeklyTotals[salonName]) weeklyTotals[salonName] = {};
+    weeklyTotals[salonName][semKey] = (weeklyTotals[salonName][semKey]||0) + r.cantidad;
   });
 
   const ranking = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
@@ -349,7 +356,7 @@ function renderCategoryDetail(container, catId){
         <div class="podium-step" id="step1">
           <div class="trophy">👑</div>
           <div class="place-num">1</div>
-          <div class="clabel">Líder Categoría</div>
+          <div class="clabel">Salón Líder</div>
           <div class="cname">${first ? first[0] : "—"}</div>
           <div class="count">${first ? first[1] : 0}</div>
         </div>
@@ -362,19 +369,19 @@ function renderCategoryDetail(container, catId){
       </div>
     `;
   } else {
-    podiumHtml = `<div class="empty-cat">No hay registros suficientes para armar el podio en esta categoría.</div>`;
+    podiumHtml = `<div class="empty-cat">Aún no hay registros de salones en esta categoría.</div>`;
   }
 
   let listHtml = "";
   if(ranking.length > 0){
-    listHtml = ranking.map(([curso, total], i) => {
+    listHtml = ranking.map(([salon, total], i) => {
       const isWinner = i === 0;
-      const weekCount = (weeklyTotals[curso] && weeklyTotals[curso][currentWeek]) ? weeklyTotals[curso][currentWeek] : total;
+      const weekCount = (weeklyTotals[salon] && weeklyTotals[salon][currentWeek]) ? weeklyTotals[salon][currentWeek] : total;
       return `
         <li>
           <div class="rank-info">
             <span class="pos">#${i+1}</span>
-            <span class="cname2">${curso}</span>
+            <span class="cname2">${salon}</span>
             ${isWinner ? '<span class="winner-cup" title="¡Va ganando!">🏆</span>' : ''}
           </div>
           <div class="rank-metrics">
@@ -391,7 +398,7 @@ function renderCategoryDetail(container, catId){
       `;
     }).join("");
   } else {
-    listHtml = `<div class="empty-cat">Sin cursos registrados en esta categoría.</div>`;
+    listHtml = `<div class="empty-cat">Sin salones registrados en esta categoría.</div>`;
   }
 
   const categoryPhotos = rows.filter(r => r.foto).slice(-12).reverse();
@@ -399,8 +406,8 @@ function renderCategoryDetail(container, catId){
   if(categoryPhotos.length > 0){
     galleryHtml = categoryPhotos.map(r => `
       <div class="photo-card">
-        <img src="${driveImgSrc(r.foto)}" alt="Evidencia de ${r.nombre}" loading="lazy" onerror="this.src='https://placehold.co/400x400/EDE9DA/2F6B4F?text=Foto'">
-        <div class="cap"><b>${r.nombre||"Anónimo"}</b>${r.curso}</div>
+        <img src="${getDirectDriveImg(r.foto)}" alt="Evidencia de ${r.nombre}" loading="lazy" onerror="this.src='https://placehold.co/400x400/EDE9DA/2F6B4F?text=Foto+Eco'">
+        <div class="cap"><b>${r.nombre||"Anónimo"}</b>Salón: ${r.curso}</div>
       </div>
     `).join("");
   } else {
@@ -413,12 +420,12 @@ function renderCategoryDetail(container, catId){
     </div>
 
     <h2 class="section-title" style="font-size: 2rem;">${cat.emoji} ${cat.name}</h2>
-    <p style="text-align:center; color:var(--ink-soft); margin-bottom: 30px;">Cursos: ${cat.grades}</p>
+    <p style="text-align:center; color:var(--ink-soft); margin-bottom: 30px;">Grados: ${cat.grades}</p>
 
     ${podiumHtml}
 
     <div class="rank-card">
-      <h3 style="font-family:'Fredoka',sans-serif; font-size:1.2rem; color:var(--leaf-dark); margin-bottom:16px;">📊 Tabla General de Posiciones</h3>
+      <h3 style="font-family:'Fredoka',sans-serif; font-size:1.2rem; color:var(--leaf-dark); margin-bottom:16px;">🏫 Tabla de Posiciones por Salón</h3>
       <ul class="rank-list">${listHtml}</ul>
     </div>
 
