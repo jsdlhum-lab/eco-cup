@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Eco-Cup! 🌿🏆 · Comité Ecológico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+  :root{
+    --paper:#FBF9F4;
+    --ink:#1A2516;
+    --ink-soft:#55664D;
+    --leaf:#2A8058;
+    --leaf-dark:#1C593D;
+    --gold:#D4AF37;
+    --gold-light:#FDF6E0;
+    --bg-gradient: linear-gradient(135deg, #FBF9F4 0%, #F5F2E6 100%);
+    --card-bg:#FFFFFF;
+    --border: rgba(26,37,22,0.08);
+    --shadow-card: 0 10px 30px -5px rgba(42,128,88,0.08);
+    --radius-lg: 24px;
+    --radius-md: 16px;
+    --radius-sm: 12px;
+    --anim-speed: 0.4s;
+    --ease-out: cubic-bezier(0.215, 0.610, 0.355, 1);
+
+    --cat1:#E07A5F;
+    --cat2:#4895EF;
+    --cat3:#8BC34A;
+    --cat4:#9C27B0;
+    --cat5:#009688;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0; height:100%; overflow-x:hidden;}
+  body{
+    background:var(--bg-gradient);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    line-height:1.5;
+    padding-bottom: 40px;
+  }
+  h1,h2,h3{margin:0;}
+  img{max-width:100%; display:block;}
+
+  header.top{
+    background:var(--card-bg);
+    padding:20px 24px;
+    border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; justify-content:space-between;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+  }
+  header.top h1{
+    font-family:'Fredoka', sans-serif;
+    font-weight:700; font-size:1.6rem; color:var(--leaf-dark);
+    display:flex; align-items:center; gap:8px; cursor:pointer;
+  }
+  header.top .meta{
+    font-size:0.8rem; color:var(--ink-soft); text-align:right; display:flex; align-items:center; gap:12px;
+  }
+  #lastUpdate{ display:block; margin-bottom:2px;}
+  #refreshBtn{
+    background:none; border:none; color:var(--leaf); cursor:pointer;
+    font-family:'Inter', sans-serif; font-weight:500; font-size:0.85rem; padding:4px 8px;
+    border-radius:var(--radius-sm); transition: all .2s;
+  }
+  #refreshBtn:hover{background:var(--gold-light); color:var(--leaf-dark);}
+  #refreshBtn.spin svg{animation: spin 1s linear infinite;}
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+
+  .wrap{max-width:1200px; margin:0 auto; padding:32px 24px;}
+
+  /* Botón volver */
+  .back-bar{margin-bottom: 24px;}
+  .back-btn{
+    background: var(--card-bg); border: 1px solid var(--border); color: var(--leaf-dark);
+    font-family: 'Fredoka', sans-serif; font-weight: 600; padding: 10px 20px;
+    border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all .2s;
+  }
+  .back-btn:hover{ background: var(--leaf); color: #fff; border-color: var(--leaf); }
+
+  /* Vista de Selección de Categorías (Home) */
+  .cat-grid{
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 40px;
+  }
+  .cat-card{
+    background: var(--card-bg); border-radius: var(--radius-lg); padding: 28px;
+    box-shadow: var(--shadow-card); border: 1px solid var(--border); cursor: pointer;
+    transition: all var(--anim-speed) var(--ease-out); position: relative; overflow: hidden;
+  }
+  .cat-card:hover{ transform: translateY(-6px); box-shadow: 0 20px 40px -10px rgba(42,128,88,0.2); }
+  .cat-card .badge{
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 0.9rem;
+    padding: 6px 14px; border-radius: 999px; color: #fff; display: inline-block; margin-bottom: 16px;
+  }
+  .cat-card h3{ font-family: 'Fredoka', sans-serif; font-size: 1.4rem; color: var(--leaf-dark); margin-bottom: 8px; }
+  .cat-card p{ font-size: 0.9rem; color: var(--ink-soft); margin: 0 0 16px; }
+  .cat-card .leader-prev{
+    font-size: 0.85rem; background: var(--paper); padding: 10px 14px; border-radius: var(--radius-sm);
+    display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);
+  }
+  .cat-card .leader-prev b{ color: var(--leaf-dark); }
+
+  /* Podio en detalle de categoría */
+  .podium{
+    display:flex; justify-content:center; align-items:flex-end; gap:12px; margin-bottom:60px; height:280px; perspective:1000px;
+  }
+  .podium-step{
+    flex:1; max-width:180px; text-align:center; position:relative;
+    background:var(--card-bg); border-radius:var(--radius-md) var(--radius-md) 4px 4px;
+    padding:20px 10px 12px; border:1px solid var(--border); box-shadow:var(--shadow-card);
+    transition:all 0.8s var(--ease-out); opacity:0; transform: translateY(30px) rotateX(10deg);
+  }
+  .podium-step.animate{opacity:1; transform:translateY(0) rotateX(0);}
+  .podium-step:nth-child(1){order:2; height:85%; z-index:2;}
+  .podium-step:nth-child(1) .place-num{background:var(--gold); color:var(--ink);}
+  .podium-step:nth-child(2){order:1; height:65%; z-index:1;}
+  .podium-step:nth-child(2) .place-num{background:#C0C0C0; color:var(--ink);}
+  .podium-step:nth-child(3){order:3; height:55%; z-index:1;}
+  .podium-step:nth-child(3) .place-num{background:#CD7F32; color:#fff;}
+  .place-num{
+    font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:1.1rem;
+    width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    position:absolute; top:-18px; left:50%; transform:translateX(-50%); box-shadow:0 4px 8px rgba(0,0,0,0.1);
+  }
+  .podium .cname{font-family:'Fredoka',sans-serif; font-weight:600; font-size:1.2rem; color:var(--leaf-dark); line-height:1.2; margin-top:24px; word-break:break-word; text-transform: uppercase;}
+  .podium .count{font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:2rem; color:var(--gold); margin-top:4px;}
+  .podium .clabel{font-size:0.75rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; margin-top:-2px;}
+  .podium .trophy{font-size:3rem; position:absolute; top:-60px; left:50%; transform:translateX(-50%);}
+
+  .section-title{
+    font-family:'Fredoka', sans-serif; font-weight:600; font-size:1.5rem;
+    color:var(--leaf-dark); margin:0 0 20px; text-align:center;
+  }
+
+  /* Listado de salones detallado */
+  .rank-card{
+    background: var(--card-bg); border-radius: var(--radius-lg); padding: 28px;
+    box-shadow: var(--shadow-card); border: 1px solid var(--border); margin-bottom: 40px;
+  }
+  .rank-list{list-style:none; margin:0; padding:0;}
+  .rank-list li{
+    padding: 16px 12px; border-bottom: 1px solid var(--border);
+    position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between;
+    border-radius: var(--radius-sm); transition: background .2s;
+  }
+  .rank-list li:hover{ background: var(--paper); }
+  .rank-list li:last-child{border-bottom:none;}
+  .rank-info{ display: flex; align-items: center; gap: 16px; flex: 1; }
+  .rank-list .pos{font-family:'IBM Plex Mono', monospace; color:var(--ink-soft); width:30px; font-weight:600; font-size: 1.1rem;}
+  .rank-list .cname2{font-weight:600; color:var(--ink); font-size: 1.05rem; font-family:'Fredoka', sans-serif; text-transform: uppercase;}
+  .rank-metrics{ display: flex; gap: 24px; align-items: center; text-align: right; }
+  .metric-group{ display: flex; flex-direction: column; }
+  .metric-label{ font-size: 0.75rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-val{ font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--leaf-dark); font-size: 1.1rem; }
+  .winner-cup{ font-size: 1.3rem; margin-left: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+
+  .empty-cat{font-size:0.95rem; color:var(--ink-soft); font-style:italic; padding:30px 0; text-align:center;}
+
+  /* Galería */
+  .gallery{
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:20px; margin-top: 20px;
+  }
+  .photo-card{
+    background:#fff; padding:10px; border-radius:var(--radius-md);
+    box-shadow:0 5px 15px rgba(0,0,0,0.04); transition:all .3s;
+    border:1px solid var(--border);
+  }
+  .photo-card:hover{transform:translateY(-4px); box-shadow:0 10px 25px rgba(0,0,0,0.08);}
+  .photo-card img{
+    width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:10px; background:var(--paper);
+  }
+  .photo-card .cap{
+    font-size:0.8rem; margin-top:10px; text-align:center; color:var(--ink-soft); line-height:1.3;
+  }
+  .photo-card .cap b{color:var(--ink); display:block; font-family:'Fredoka',sans-serif; font-weight:600;}
+
+  footer{
+    text-align:center; font-size:0.85rem; color:var(--ink-soft); margin-top:60px;
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1 id="homeTitle">🌿 Eco-Cup!</h1>
+  <div class="meta">
+    <span id="lastUpdate">Actualizando…</span>
+    <button id="refreshBtn">🔄 Actualizar</button>
+  </div>
+</header>
+
+<div class="wrap" id="mainContainer">
+  <!-- Contenido dinámico generado por JavaScript -->
+</div>
+
+<footer>Eco-Cup! · Sistema de Gestión Ambiental Escolar</footer>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN Y DATOS DE CATEGORÍAS Y SALONES
+   ============================================================ */
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQCtQYDSC-GE_OWiqUlPeDNTx3oMAN1p7VXVJHIoJfdetoyvb6OQ3ysZAYygKKSd7hcCF_GXiNN1SKM/pub?output=csv";
+
+const CATEGORIES = [
+  { id:1, color:"var(--cat1)", name:"Seedlings", emoji:"🌱", grades:"Prejardín, Jardín, Transición y 1°", match:["prejardin","jardin","transicion","primero","1°","1"], validGrades:["prejardin","jardin","transicion","primero","1"] },
+  { id:2, color:"var(--cat2)", name:"Scouts", emoji:"🌿", grades:"2°, 3°, 4° y 5°", match:["segundo","tercero","cuarto","quinto","2°","3°","4°","5°","2","3","4","5"], validGrades:["segundo","tercero","cuarto","quinto","2","3","4","5"] },
+  { id:3, color:"var(--cat3)", name:"Saplings", emoji:"🌳", grades:"6°, 7°, 8°", match:["sexto","septimo","séptimo","octavo","6°","7°","8°","6","7","8"], validGrades:["sexto","septimo","séptimo","octavo","6","7","8"] },
+  { id:4, color:"var(--cat4)", name:"Green Guardians", emoji:"🌲", grades:"9°, 10°, 11°", match:["noveno","decimo","décimo","once","9°","10°","11°","9","10","11"], validGrades:["noveno","decimo","décimo","once","9","10","11"] },
+  { id:5, color:"var(--cat5)", name:"Eco Leaders", emoji:"🌎", grades:"Introductorio, 12°, 13°", match:["introductorio","12°","13°","12-1","12-2","13-1","13-2","12","13"], validGrades:["introductorio","12","13"] },
+];
+
+const norm = s => (s||"").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+
+function findCol(headers, keywords){
+  return headers.find(h => keywords.some(k => norm(h).includes(k))) || null;
+}
+
+function categoryFor(course){
+  const c = norm(course);
+  for(const cat of CATEGORIES){
+    if(cat.match.some(m => c.includes(norm(m)))) return cat.id;
+  }
+  return null;
+}
+
+function getDirectDriveImg(url){
+  if(!url) return null;
+  const str = url.toString().trim();
+  // Si ya es un enlace directo de visualización o miniatura
+  const m = str.match(/[-\w]{25,}/);
+  if(!m) return str;
+  // Soporte para links de Google Drive compartidos
+  if(str.includes("drive.google.com") || str.includes("docs.google.com")){
+    return `https://drive.google.com/uc?export=view&id=${m[0]}`;
+  }
+  return str;
+}
+
+let RAW = [];
+let currentView = { type: 'home', catId: null };
+
+async function loadData(){
+  const btn = document.getElementById("refreshBtn");
+  btn.classList.add("spin");
+  document.getElementById("lastUpdate").textContent = "Actualizando…";
+
+  try{
+    const res = await fetch(SHEET_CSV_URL + (SHEET_CSV_URL.includes("?")?"&":"?") + "_=" + Date.now());
+    const text = await res.text();
+    const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
+    const headers = parsed.meta.fields || [];
+
+    const colCurso   = findCol(headers, ["curso","grado","salon","salón"]);
+    const colPeriodo = findCol(headers, ["periodo","período"]);
+    const colSemana  = findCol(headers, ["semana"]);
+    const colCant    = findCol(headers, ["cantidad","botellas","numero","número"]);
+    const colNombre  = findCol(headers, ["nombre","responsable","estudiante"]);
+    const colFoto    = findCol(headers, ["foto","evidencia","imagen","archivo"]);
+    const colTime    = headers[0];
+
+    RAW = parsed.data.map(row => ({
+      nombre: colNombre ? row[colNombre] : "",
+      curso: colCurso ? row[colCurso].toString().trim() : "",
+      periodo: colPeriodo ? row[colPeriodo] : "General",
+      semana: colSemana ? row[colSemana] : "",
+      cantidad: colCant ? parseInt((row[colCant]||"0").toString().replace(/[^\d]/g,""))||0 : 0,
+      foto: colFoto ? row[colFoto] : "",
+      timestamp: colTime ? row[colTime] : "",
+    })).filter(r => r.curso);
+
+    render();
+    document.getElementById("lastUpdate").textContent = "Actualizado: " + new Date().toLocaleTimeString("es-CO", {hour:'2-digit', minute:'2-digit'});
+  }catch(err){
+    document.getElementById("lastUpdate").textContent = "Error al sincronizar";
+    console.error(err);
+  } finally {
+    btn.classList.remove("spin");
+  }
+}
+
+function render(){
+  const container = document.getElementById("mainContainer");
+  
+  if(currentView.type === 'home'){
+    renderHome(container);
+  } else if(currentView.type === 'category'){
+    renderCategoryDetail(container, currentView.catId);
+  }
+}
+
+function renderHome(container){
+  const cardsHtml = CATEGORIES.map(cat => {
+    const rows = RAW.filter(r => categoryFor(r.curso) === cat.id);
+    const totals = {};
+    rows.forEach(r => { totals[r.curso] = (totals[r.curso]||0) + r.cantidad; });
+    const ranking = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+    const leader = ranking.length > 0 ? `${ranking[0][0].toUpperCase()} (${ranking[0][1]} 🧴)` : "Sin registros";
+
+    return `
+      <div class="cat-card" style="border-top: 5px solid ${cat.color};" onclick="openCategory(${cat.id})">
+        <span class="badge" style="background:${cat.color}">${cat.emoji} ${cat.name}</span>
+        <h3>${cat.name}</h3>
+        <p>${cat.grades}</p>
+        <div class="leader-prev">
+          <span>Líder salón:</span>
+          <b>${leader} 🏆</b>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  container.innerHTML = `
+    <h2 class="section-title" style="margin-bottom: 8px;">Selecciona una Categoría</h2>
+    <p style="text-align:center; color:var(--ink-soft); margin-bottom: 32px;">Explora el podio y los salones de cada categoría escolar</p>
+    <div class="cat-grid">${cardsHtml}</div>
+  `;
+}
+
+function renderCategoryDetail(container, catId){
+  const cat = CATEGORIES.find(c => c.id === catId);
+  const rows = RAW.filter(r => categoryFor(r.curso) === catId);
+
+  const totals = {};
+  const weeklyTotals = {};
+  
+  rows.forEach(r => {
+    const salonName = r.curso;
+    totals[salonName] = (totals[salonName]||0) + r.cantidad;
+    const semKey = r.semana ? r.semana.trim() : "Actual";
+    if(!weeklyTotals[salonName]) weeklyTotals[salonName] = {};
+    weeklyTotals[salonName][semKey] = (weeklyTotals[salonName][semKey]||0) + r.cantidad;
+  });
+
+  const ranking = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  const [first, second, third] = [ranking[0], ranking[1], ranking[2]];
+
+  const allWeeks = [...new Set(rows.map(r => r.semana ? r.semana.trim() : "Actual"))];
+  const currentWeek = allWeeks[allWeeks.length - 1] || "Actual";
+
+  let podiumHtml = "";
+  if(ranking.length > 0){
+    podiumHtml = `
+      <div class="podium">
+        <div class="podium-step" id="step2">
+          <div class="place-num">2</div>
+          <div class="clabel">Subcampeón</div>
+          <div class="cname">${second ? second[0] : "—"}</div>
+          <div class="count">${second ? second[1] : 0}</div>
+        </div>
+        <div class="podium-step" id="step1">
+          <div class="trophy">👑</div>
+          <div class="place-num">1</div>
+          <div class="clabel">Salón Líder</div>
+          <div class="cname">${first ? first[0] : "—"}</div>
+          <div class="count">${first ? first[1] : 0}</div>
+        </div>
+        <div class="podium-step" id="step3">
+          <div class="place-num">3</div>
+          <div class="clabel">Tercer Lugar</div>
+          <div class="cname">${third ? third[0] : "—"}</div>
+          <div class="count">${third ? third[1] : 0}</div>
+        </div>
+      </div>
+    `;
+  } else {
+    podiumHtml = `<div class="empty-cat">Aún no hay registros de salones en esta categoría.</div>`;
+  }
+
+  let listHtml = "";
+  if(ranking.length > 0){
+    listHtml = ranking.map(([salon, total], i) => {
+      const isWinner = i === 0;
+      const weekCount = (weeklyTotals[salon] && weeklyTotals[salon][currentWeek]) ? weeklyTotals[salon][currentWeek] : total;
+      return `
+        <li>
+          <div class="rank-info">
+            <span class="pos">#${i+1}</span>
+            <span class="cname2">${salon}</span>
+            ${isWinner ? '<span class="winner-cup" title="¡Va ganando!">🏆</span>' : ''}
+          </div>
+          <div class="rank-metrics">
+            <div class="metric-group">
+              <span class="metric-label">Esta semana</span>
+              <span class="metric-val">${weekCount} 🧴</span>
+            </div>
+            <div class="metric-group">
+              <span class="metric-label">Acumulado</span>
+              <span class="metric-val" style="color:var(--leaf);">${total} 🧴</span>
+            </div>
+          </div>
+        </li>
+      `;
+    }).join("");
+  } else {
+    listHtml = `<div class="empty-cat">Sin salones registrados en esta categoría.</div>`;
+  }
+
+  const categoryPhotos = rows.filter(r => r.foto).slice(-12).reverse();
+  let galleryHtml = "";
+  if(categoryPhotos.length > 0){
+    galleryHtml = categoryPhotos.map(r => `
+      <div class="photo-card">
+        <img src="${getDirectDriveImg(r.foto)}" alt="Evidencia de ${r.nombre}" loading="lazy" onerror="this.src='https://placehold.co/400x400/EDE9DA/2F6B4F?text=Foto+Eco'">
+        <div class="cap"><b>${r.nombre||"Anónimo"}</b>Salón: ${r.curso}</div>
+      </div>
+    `).join("");
+  } else {
+    galleryHtml = `<div class="empty-cat" style="grid-column: 1/-1;">No hay fotos de evidencia registradas en esta categoría.</div>`;
+  }
+
+  container.innerHTML = `
+    <div class="back-bar">
+      <button class="back-btn" onclick="goHome()">← Volver a Categorías</button>
+    </div>
+
+    <h2 class="section-title" style="font-size: 2rem;">${cat.emoji} ${cat.name}</h2>
+    <p style="text-align:center; color:var(--ink-soft); margin-bottom: 30px;">Grados: ${cat.grades}</p>
+
+    ${podiumHtml}
+
+    <div class="rank-card">
+      <h3 style="font-family:'Fredoka',sans-serif; font-size:1.2rem; color:var(--leaf-dark); margin-bottom:16px;">🏫 Tabla de Posiciones por Salón</h3>
+      <ul class="rank-list">${listHtml}</ul>
+    </div>
+
+    <h2 class="section-title">📸 Galería de Evidencias</h2>
+    <div class="gallery">${galleryHtml}</div>
+  `;
+
+  setTimeout(() => {
+    document.querySelectorAll(".podium-step").forEach(el => el.classList.add("animate"));
+  }, 100);
+}
+
+function openCategory(id){
+  currentView = { type: 'category', catId: id };
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  render();
+}
+
+function goHome(){
+  currentView = { type: 'home', catId: null };
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  render();
+}
+
+document.getElementById("homeTitle").addEventListener("click", goHome);
+document.getElementById("refreshBtn").addEventListener("click", loadData);
+
+loadData();
+</script>
+
+</body>
+</html>
